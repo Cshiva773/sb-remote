@@ -1,0 +1,33 @@
+{
+  "name": "sb-remote",
+  "version": "1.0.0",
+  "description": "MCP Server for Express with Streamable HTTP Transport",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "serve": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.11.4",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "express-oauth2-jwt-bearer": "^1.6.1",
+    "express-openid-connect": "^2.18.1",
+    "express-session": "^1.18.1",
+    "mongodb": "^6.16.0",
+    "passport": "^0.7.0",
+    "passport-auth0": "^1.4.4",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.2"
+  },
+  "keywords": [],
+  "author": "Your Name",
+  "license": "ISC"
+}
