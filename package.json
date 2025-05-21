@@ -5,27 +5,36 @@
   "main": "src/index.ts",
   "type": "module",
   "scripts": {
-    "start": "tsx src/index.ts",
-    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.js",
+    "dev": "tsx watch src/index.js",
     "build": "tsc",
     "serve": "node dist/index.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.51.0",
     "@modelcontextprotocol/sdk": "^1.11.4",
+    "axios": "^1.9.0",
+    "connect-mongo": "^5.1.0",
+    "connect-redis": "^8.1.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "express-oauth2-jwt-bearer": "^1.6.1",
     "express-openid-connect": "^2.18.1",
     "express-session": "^1.18.1",
+    "ioredis": "^5.6.1",
+    "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.16.0",
+    "nodemailer": "^7.0.3",
     "passport": "^0.7.0",
     "passport-auth0": "^1.4.4",
+    "redis": "^5.0.1",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",
     "zod": "^3.24.4"
   },
   "devDependencies": {
-    "@types/express": "^5.0.2"
+    "@types/express": "^5.0.2",
+    "@types/express-session": "^1.18.1"
   },
   "keywords": [],
   "author": "Your Name",

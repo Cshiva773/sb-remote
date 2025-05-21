@@ -4,16 +4,22 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { connectToDatabase } from "../config/db";
-import mongodb, { ObjectId } from 'mongodb';
+import { connectToDatabase } from "../config/db.js";
+import mongodb, { ObjectId } from "mongodb";
+import cors from "cors";
+
 import { registerAllTools } from "../services/registerTools.js";
 
+
 const app = express();
+app.use(cors({
+  exposedHeaders: ['mcp-session-id']
+}));
 app.use(express.json());
 
 // Map to store transports by session ID
-const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
-let db: any;
+const transports = {};
+let db;
 
 // Connect to database before starting server
 const initializeDatabase = async () => {
@@ -22,7 +28,7 @@ const initializeDatabase = async () => {
     console.error("Database connection established.");
     return true;
   } catch (error) {
-    console.error("Failed to connect to the database:", (error as Error).message);
+    console.error("Failed to connect to the database:", error.message);
     return false;
   }
 };
@@ -30,17 +36,21 @@ const initializeDatabase = async () => {
 // Handle POST requests for client-to-server communication
 app.post('/mcp', async (req, res) => {
   try {
-    const sessionId = req.headers['mcp-session-id'] as string | undefined;
-    let transport: StreamableHTTPServerTransport;
+    const sessionId = req.headers['mcp-session-id'];
+    let transport;
 
     if (!sessionId && isInitializeRequest(req.body)) {
+      const newSessionId = randomUUID();
       transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => randomUUID(),
-        onsessioninitialized: (sessionId) => {
-          console.error(`Session initialized with ID: ${sessionId}`);
-          transports[sessionId] = transport;
+        sessionIdGenerator: () => newSessionId,
+        onsessioninitialized: (newSessionId) => {
+          console.error(`Session initialized with ID: ${newSessionId}`);
+          transports[newSessionId] = transport;
         }
       });
+
+      // Set the session ID in response headers
+      res.setHeader('mcp-session-id', newSessionId);
 
       transport.onclose = () => {
         if (transport.sessionId) {
@@ -63,7 +73,7 @@ app.post('/mcp', async (req, res) => {
           console.error("Database not connected, skipping tool registration");
         }
       } catch (error) {
-        console.error("Error registering tools:", (error as Error).message);
+        console.error("Error registering tools:", error.message);
       }
 
       await server.connect(transport);
@@ -85,12 +95,12 @@ app.post('/mcp', async (req, res) => {
 
     await transport.handleRequest(req, res, req.body);
   } catch (error) {
-    console.error("Error handling POST request:", (error as Error).message);
+    console.error("Error handling POST request:", error.message);
     res.status(500).json({
       jsonrpc: '2.0',
       error: {
         code: -32000,
-        message: `Internal server error: ${(error as Error).message}`,
+        message: `Internal server error: ${error.message}`,
       },
       id: null,
     });
@@ -98,9 +108,9 @@ app.post('/mcp', async (req, res) => {
 });
 
 // Reusable handler for GET and DELETE requests
-const handleSessionRequest = async (req: express.Request, res: express.Response) => {
+const handleSessionRequest = async (req, res) => {
   try {
-    const sessionId = req.headers['mcp-session-id'] as string | undefined;
+    const sessionId = req.headers['mcp-session-id'];
     if (!sessionId || !transports[sessionId]) {
       res.status(400).send('Invalid or missing session ID');
       return;
@@ -108,8 +118,8 @@ const handleSessionRequest = async (req: express.Request, res: express.Response)
     const transport = transports[sessionId];
     await transport.handleRequest(req, res);
   } catch (error) {
-    console.error("Error handling session request:", (error as Error).message);
-    res.status(500).send(`Internal server error: ${(error as Error).message}`);
+    console.error("Error handling session request:", error.message);
+    res.status(500).send(`Internal server error: ${error.message}`);
   }
 };
 
@@ -122,17 +132,17 @@ app.delete('/mcp', handleSessionRequest);
 // Initialize database then start server
 const startServer = async () => {
   const dbInitialized = await initializeDatabase();
-  
+
   const PORT = process.env.PORT || 3003;
   app.listen(PORT, () => {
     console.error(`MCP server started on port ${PORT}`);
   });
-  
+
   // Keep the process alive
   process.on('uncaughtException', (err) => {
     console.error('Uncaught exception:', err);
   });
-  
+
   // Prevent the process from exiting immediately
   process.stdin.resume();
 };
